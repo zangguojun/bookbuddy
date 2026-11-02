@@ -49,13 +49,13 @@ class _CliProxySettingsDialogState extends State<CliProxySettingsDialog> {
       final models = await CliProxyClient(_dio).models(_url.text, _key.text.trim());
       final missing = [CliProxyClient.textModel, CliProxyClient.imageModel, CliProxyClient.editModel]
           .where((id) => !models.contains(id)).toList();
-      if (mounted) setState(() => _status = missing.isEmpty
+      if (mounted) { setState(() => _status = missing.isEmpty
           ? '三个目标模型均已列出。此检查不代表实际生成、编辑已通过。'
-          : '代理未列出：${missing.join('、')}。请确认上游支持，不要仅修改模型别名。');
+          : '代理未列出：${missing.join('、')}。请确认上游支持，不要仅修改模型别名。'); }
     } catch (e) {
-      if (mounted) setState(() => _status = e is DioException
+      if (mounted) { setState(() => _status = e is DioException
           ? '连接失败（${e.response?.statusCode ?? e.type.name}），请检查网关、密钥和网络。'
-          : '模型检查失败，请确认代理返回标准模型列表。');
+          : '模型检查失败，请确认代理返回标准模型列表。'); }
     } finally {
       if (mounted) setState(() => _checking = false);
     }
