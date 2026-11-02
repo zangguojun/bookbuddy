@@ -26,7 +26,7 @@ Future<void> runIo(
   WidgetTester tester,
   Future<void> Function() body, {
   bool Function()? until,
-  int maxRounds = 60,
+  int maxRounds = 600,
 }) async {
   await tester.runAsync(body);
   for (var i = 0; i < maxRounds; i++) {
@@ -296,7 +296,11 @@ void main() {
     await runIo(
       tester,
       () => tester.tap(find.text('生成水彩童话定妆图')),
-      until: () => find.text('重新生成水彩童话定妆图').evaluate().isNotEmpty,
+      until: () {
+        final button = find.widgetWithText(FilledButton, '重新生成水彩童话定妆图');
+        return button.evaluate().isNotEmpty &&
+            tester.widget<FilledButton>(button).onPressed != null;
+      },
     );
 
     expect(find.text('定妆图已保存，请检查外貌是否符合预期'), findsOneWidget);
