@@ -915,6 +915,7 @@ class _BookReaderScreenState extends State<BookReaderScreen>
         style: style,
         page: page,
         fullPromptOverride: fullPromptOverride,
+        sourceImageBase64: oldImage,
         referenceImageBase64: _book.characters.isEmpty
             ? _book.protagonistRefImage
             : null,

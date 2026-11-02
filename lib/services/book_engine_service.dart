@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'cliproxy_client.dart';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -688,6 +689,7 @@ $numbered
     required String baseUrl,
     required String model,
   }) =>
+      type == 'cliproxy' ||
       type == 'tokenhub' ||
       baseUrl.contains('tokenhub.tencentmaas.com') ||
       baseUrl.contains('wand/hunyuan-image') ||
@@ -721,6 +723,7 @@ $numbered
       baseUrl: settings.imageBaseUrl,
       apiKey: settings.imageApiKey,
       model: settings.imageModel,
+      quality: settings.activeImageProfile.quality,
       prompt: sanitizePrompt(prompt),
       negative: style.negative,
       references: [
@@ -783,6 +786,7 @@ $numbered
     String? fullPromptOverride,
     String? customInstruction,
     String? referenceImageBase64,
+    String? sourceImageBase64,
     List<BookCharacter> characters = const [],
   }) async {
     final castError = validateSceneCast(page: page, characters: characters);
@@ -834,6 +838,10 @@ $numbered
       references.add(_ImageReference('主角', referenceImageBase64));
     }
 
+    if (settings.imageType == 'cliproxy' && sourceImageBase64 != null && sourceImageBase64.isNotEmpty) {
+      references.insert(0, _ImageReference('待修改的本页原图（保留主体，按修改要求编辑）', sourceImageBase64));
+    }
+
     // 进行安全脱敏过滤（防止触发 PROHIBITED_CONTENT）
     final cleanPrompt = sanitizePrompt(pagePrompt);
     final negative = style.negative;
@@ -845,6 +853,7 @@ $numbered
         baseUrl: settings.imageBaseUrl,
         apiKey: settings.imageApiKey,
         model: settings.imageModel,
+        quality: settings.activeImageProfile.quality,
         prompt: cleanPrompt,
         negative: negative,
         references: references,
@@ -852,7 +861,8 @@ $numbered
       if (b64 != null && b64.isNotEmpty) {
         page.generationError = null;
         page.imageProviderUsed = settings.imageType;
-        page.imageModelUsed = settings.imageModel;
+        page.imageModelUsed = settings.imageType == 'cliproxy' && references.isNotEmpty
+            ? CliProxyClient.editModel : settings.imageModel;
         page.imageReferenceApplied =
             references.isNotEmpty &&
             supportsCharacterReference(
@@ -963,6 +973,13 @@ $numbered
     double? temperature,
     List<LlmImageInput> images = const [],
   }) async {
+    if (settings.llmType == 'cliproxy') {
+      return CliProxyClient(_dio).text(
+        base: settings.llmBaseUrl, key: settings.llmApiKey, model: settings.llmModel,
+        instructions: systemPrompt, prompt: userPrompt,
+        images: [for (final image in images) {'mimeType': image.mimeType, 'base64': image.base64}],
+      );
+    }
     if (settings.llmType == 'gemini') {
       final base = settings.llmBaseUrl.replaceAll(RegExp(r'/v1(beta)?/?$'), '');
       final url = '$base/v1beta/models/${settings.llmModel}:generateContent';
@@ -1126,7 +1143,16 @@ $numbered
     required String negative,
     List<_ImageReference> references = const [],
     String? sessionKey,
+    String quality = 'high',
   }) async {
+    if (type == 'cliproxy') {
+      return CliProxyClient(_dio).image(base: baseUrl, key: apiKey, model: model,
+        prompt: prompt, quality: quality,
+        references: [for (final ref in references) {
+          'name': ref.name, 'base64': ref.base64,
+        }],
+      );
+    }
     // 自动判定或按协议走 腾讯 TokenHub 混元 3.5 生图接口
     final isTokenHub =
         type == 'tokenhub' ||

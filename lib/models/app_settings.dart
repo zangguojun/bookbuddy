@@ -61,6 +61,7 @@ class ImageProfile {
   String baseUrl;
   String apiKey;
   String model;
+  String quality;
 
   ImageProfile({
     required this.id,
@@ -69,6 +70,7 @@ class ImageProfile {
     this.baseUrl = 'https://generativelanguage.googleapis.com',
     this.apiKey = '',
     this.model = 'imagen-3.0-generate-002',
+    this.quality = 'high',
   });
 
   Map<String, dynamic> toJson() => {
@@ -78,6 +80,7 @@ class ImageProfile {
         'baseUrl': baseUrl,
         'apiKey': apiKey,
         'model': model,
+        'quality': quality,
       };
 
   factory ImageProfile.fromJson(Map<String, dynamic> json) => ImageProfile(
@@ -88,6 +91,7 @@ class ImageProfile {
         baseUrl: json['baseUrl']?.toString() ?? '',
         apiKey: json['apiKey']?.toString() ?? '',
         model: json['model']?.toString() ?? '',
+        quality: const {'auto', 'low', 'medium', 'high'}.contains(json['quality']) ? json['quality'] as String : 'high',
       );
 
   ImageProfile copyWith({
@@ -97,6 +101,7 @@ class ImageProfile {
     String? baseUrl,
     String? apiKey,
     String? model,
+    String? quality,
   }) {
     return ImageProfile(
       id: id ?? this.id,
@@ -105,6 +110,7 @@ class ImageProfile {
       baseUrl: baseUrl ?? this.baseUrl,
       apiKey: apiKey ?? this.apiKey,
       model: model ?? this.model,
+      quality: quality ?? this.quality,
     );
   }
 }

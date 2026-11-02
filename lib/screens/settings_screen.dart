@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'cliproxy_settings_dialog.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -247,7 +248,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _configureCliProxy() async {
+    final changed = await showDialog<bool>(context: context,
+      builder: (_) => CliProxySettingsDialog(settings: _settings));
+    if (changed == true && mounted) {
+      setState(() {});
+      await _persistSettings();
+    }
+  }
+
   Future<void> _showEditLlmDialog({LlmProfile? existing}) async {
+    if (existing?.providerType == 'cliproxy') { await _configureCliProxy(); return; }
     final isNew = existing == null;
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
     final urlCtrl = TextEditingController(
@@ -623,6 +634,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _showEditImageDialog({ImageProfile? existing}) async {
+    if (existing?.providerType == 'cliproxy') { await _configureCliProxy(); return; }
     final isNew = existing == null;
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
     final urlCtrl = TextEditingController(
@@ -1027,6 +1039,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             children: [
+              Card(child: ListTile(
+                leading: const Icon(Icons.hub),
+                title: const Text('连接 cliProxy'),
+                subtitle: const Text('统一配置故事生成、照片识别和图片生成 / 编辑'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _configureCliProxy,
+              )),
+              const SizedBox(height: 16),
               // 1. LLM 配置多选项卡片
               _buildSectionCard(
                 title: '🧠 故事文本模型 (LLM Multi-Provider)',
