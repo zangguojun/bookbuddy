@@ -111,8 +111,14 @@ class CliProxyClient {
     final first = (body['data'] as List).first;
     final encoded = first is Map ? first['b64_json'] : null;
     if (encoded is! String || encoded.isEmpty) throw const FormatException('图片接口未返回 b64_json');
-    final bytes = base64Decode(encoded);
-    if (bytes.isEmpty || img.decodeImage(bytes) == null) throw const FormatException('返回数据不是可解码的图片');
+    try {
+      final bytes = base64Decode(encoded);
+      if (bytes.length < 12 || img.decodeImage(bytes) == null) {
+        throw const FormatException('返回数据不是可解码的图片');
+      }
+    } catch (_) {
+      throw const FormatException('返回数据不是可解码的图片');
+    }
     return encoded;
   }
 }
